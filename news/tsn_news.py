@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import feedparser
+import pytz
+from django.utils import timezone
 
 from news.models import Trend, NewsArticle
 from news.utils import clean_text
@@ -11,7 +13,7 @@ def fetch_news():
     """Get new posts from the tsn feed within the last 7 days and save trending news."""
     logger = AppLogger("tsn_feed")
     feed_url = "https://tsn.ua/rss/full.rss"
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    seven_days_ago = timezone.now() - timezone.timedelta(days=7)
 
     try:
         news_feed = feedparser.parse(feed_url)
@@ -28,6 +30,7 @@ def fetch_news():
                 continue
 
             published_date = datetime(*entry.published_parsed[:6])
+            published_date = pytz.utc.localize(published_date)
             if published_date < seven_days_ago:
                 continue
 

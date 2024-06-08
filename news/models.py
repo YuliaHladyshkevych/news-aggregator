@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 
 class Trend(models.Model):
@@ -29,3 +31,12 @@ class NewsArticle(models.Model):
     class Meta:
         verbose_name = "News article"
         verbose_name_plural = "News articles"
+
+
+@receiver(pre_delete, sender=Trend)
+def delete_related_articles(sender, instance, **kwargs):
+    """Signal handler to delete related articles if the only trend associated with them is being deleted."""
+    related_articles = instance.news_articles.all()
+    for article in related_articles:
+        if article.trends.count() == 1 and instance in article.trends.all():
+            article.delete()
